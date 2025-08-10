@@ -43,13 +43,29 @@ export default function QuizApp() {
       try {
         const response = await fetch('/data/questions.json')
         if (!response.ok) {
-          throw new Error('Failed to load questions')
+          throw new Error(`HTTP error! status: ${response.status}`)
         }
-        const data = await response.json()
+        
+        const responseText = await response.text()
+        let data
+        try {
+          data = JSON.parse(responseText)
+        } catch (parseError) {
+          throw new Error(`Invalid JSON format: ${parseError.message}`)
+        }
+        
+        if (!Array.isArray(data)) {
+          throw new Error('Questions data must be an array')
+        }
+        
+        if (data.length === 0) {
+          throw new Error('No questions found in the file')
+        }
+        
         setQuestions(data)
         setLoading(false)
       } catch (err) {
-        setError('Failed to load quiz questions. Please try again.')
+        setError(`Failed to load quiz questions: ${err.message || 'Unknown error'}`)
         setLoading(false)
       }
     }
@@ -71,15 +87,64 @@ export default function QuizApp() {
   }
 
   if (error) {
+    const handleRetry = () => {
+      setError(null)
+      setLoading(true)
+      window.location.reload()
+    }
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4 flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardContent className="flex flex-col items-center justify-center p-8">
             <XCircle className="w-8 h-8 text-red-600 mb-4" />
-            <p className="text-lg font-medium text-red-600 text-center">{error}</p>
-            <Button onClick={() => window.location.reload()} className="mt-4">
-              Try Again
-            </Button>
+            <p className="text-lg font-medium text-red-600 text-center mb-4">{error}</p>
+            <div className="space-y-2 w-full">
+              <Button onClick={handleRetry} className="w-full">
+                Try Again
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setQuestions([
+                    {
+                      id: 274,
+                      rank: 1,
+                      question: "Average items in the Product Backlog are usually…",
+                      img_url: null,
+                      img_width: null,
+                      img_height: null,
+                      favorite: false,
+                      multiple: false,
+                      correct: false,
+                      explanation: "Items of different sizes are added to the Product Backlog. Larger items are typically broken down into smaller, more manageable pieces during Sprint Planning, making Product Backlog items generally larger than Sprint Backlog items.",
+                      answers: [
+                        {
+                          value: 788,
+                          title: "The same size as the items in the Sprint Backlog",
+                          correct: 0
+                        },
+                        {
+                          value: 787,
+                          title: "Smaller than items in the Sprint Backlog",
+                          correct: 0
+                        },
+                        {
+                          value: 786,
+                          title: "Larger than items in the Sprint Backlog",
+                          correct: 1
+                        }
+                      ]
+                    }
+                  ])
+                  setError(null)
+                  setLoading(false)
+                }}
+                className="w-full"
+              >
+                Use Sample Questions
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -91,7 +156,7 @@ export default function QuizApp() {
   const progress = ((currentQuestionIndex + 1) / totalQuestions) * 100
 
   const handleAnswerSelect = (answerValue: number) => {
-    if (showFeedback) return
+    if (showFeedback) return 
     
     setSelectedAnswer(answerValue)
     setShowFeedback(true)
