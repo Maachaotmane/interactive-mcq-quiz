@@ -1,0 +1,89 @@
+[
+  {
+    "id": 274,
+    "rank": 1,
+    "question": "Average items in the Product Backlog are usually…",
+    "img_url": null,
+    "img_width": null,
+    "img_height": null,
+    "favorite": false,
+    "multiple": false,
+    "correct": false,
+    "explanation": "Items of different sizes are added to the Product Backlog\n5. Items are sorted based on their business value\n6. Large items on the top of the Product Backlog are broken down into smaller ones\nThat’s why the items on the top are smaller than those on the bottom. Also, because\nitems selected for the Sprint Backlog come from the top of the Product Backlog, they are\nexpected to be smaller than the average item in the Product Backlog.\nRemember that size is not a basis for ordering the Product Backlog items; it just happens\nautomatically because of our process.\n2.",
+    "answers": [
+      {
+        "value": 788,
+        "title": "The same size as the items in the Sprint Backlog",
+        "correct": 0
+      },
+      {
+        "value": 787,
+        "title": "Smaller than items in the Sprint Backlog",
+        "correct": 0
+      },
+      {
+        "value": 786,
+        "title": "Larger than items in the Sprint Backlog",
+        "correct": 1
+      }
+    ]
+  },
+  {
+    "id": 44,
+    "rank": 1,
+    "question": "Average items in the Product Backlog are usually…",
+    "img_url": null,
+    "img_width": null,
+    "img_height": null,
+    "favorite": false,
+    "multiple": false,
+    "correct": false,
+    "explanation": "Items of different sizes are added to the Product Backlog\n5. Items are sorted based on their business value\n6. Large items on the top of the Product Backlog are broken down into smaller ones\nThat’s why the items on the top are smaller than those on the bottom. Also, because\nitems selected for the Sprint Backlog come from the top of the Product Backlog, they are\nexpected to be smaller than the average item in the Product Backlog.\nRemember that size is not a basis for ordering the Product Backlog items; it just happens\nautomatically because of our process.\n2.",
+    "answers": [
+      {
+        "value": 788,
+        "title": "The same size as the items in the Sprint Backlog",
+        "correct": 0
+      },
+      {
+        "value": 787,
+        "title": "Smaller than items in the Sprint Backlog",
+        "correct": 1
+      },
+      {
+        "value": 786,
+        "title": "Larger than items in the Sprint Backlog",
+        "correct": 0
+      }
+    ]
+  },
+  {
+    "id": 55,
+    "rank": 1,
+    "question": "Average items in the Product Backlog are usually…",
+    "img_url": null,
+    "img_width": null,
+    "img_height": null,
+    "favorite": false,
+    "multiple": true,
+    "correct": false,
+    "explanation": "Items of different sizes are added to the Product Backlog\n5. Items are sorted based on their business value\n6. Large items on the top of the Product Backlog are broken down into smaller ones\nThat’s why the items on the top are smaller than those on the bottom. Also, because\nitems selected for the Sprint Backlog come from the top of the Product Backlog, they are\nexpected to be smaller than the average item in the Product Backlog.\nRemember that size is not a basis for ordering the Product Backlog items; it just happens\nautomatically because of our process.\n2.",
+    "answers": [
+      {
+        "value": 788,
+        "title": "The same size as the items in the Sprint Backlog",
+        "correct": 1
+      },
+      {
+        "value": 787,
+        "title": "Smaller than items in the Sprint Backlog",
+        "correct": 0
+      },
+      {
+        "value": 786,
+        "title": "Larger than items in the Sprint Backlog",
+        "correct": 1
+      }
+    ]
+  }
+]

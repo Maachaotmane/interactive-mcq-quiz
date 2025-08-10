@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { CheckCircle, XCircle, RotateCcw, Trophy } from 'lucide-react'
+import { CheckCircle, XCircle, RotateCcw, Trophy, Loader2 } from 'lucide-react'
 
 interface Answer {
   value: number
@@ -26,97 +26,10 @@ interface Question {
   answers: Answer[]
 }
 
-const sampleQuestions: Question[] = [
-  {
-    id: 274,
-    rank: 1,
-    question: "Average items in the Product Backlog are usually…",
-    img_url: null,
-    img_width: null,
-    img_height: null,
-    favorite: false,
-    multiple: false,
-    correct: false,
-    explanation: "Items of different sizes are added to the Product Backlog. Larger items are typically broken down into smaller, more manageable pieces during Sprint Planning, making Product Backlog items generally larger than Sprint Backlog items.",
-    answers: [
-      {
-        value: 788,
-        title: "The same size as the items in the Sprint Backlog",
-        correct: 0
-      },
-      {
-        value: 787,
-        title: "Smaller than items in the Sprint Backlog",
-        correct: 0
-      },
-      {
-        value: 786,
-        title: "Larger than items in the Sprint Backlog",
-        correct: 1
-      }
-    ]
-  },
-  {
-    id: 275,
-    rank: 2,
-    question: "What is the main purpose of a Sprint Review?",
-    img_url: null,
-    img_width: null,
-    img_height: null,
-    favorite: false,
-    multiple: false,
-    correct: false,
-    explanation: "The Sprint Review is held at the end of the Sprint to inspect the Increment and adapt the Product Backlog if needed. It's an opportunity to demonstrate what was accomplished and gather feedback from stakeholders.",
-    answers: [
-      {
-        value: 789,
-        title: "To plan the next Sprint",
-        correct: 0
-      },
-      {
-        value: 790,
-        title: "To inspect the Increment and adapt the Product Backlog",
-        correct: 1
-      },
-      {
-        value: 791,
-        title: "To review team performance",
-        correct: 0
-      }
-    ]
-  },
-  {
-    id: 276,
-    rank: 3,
-    question: "Who is responsible for managing the Product Backlog?",
-    img_url: null,
-    img_width: null,
-    img_height: null,
-    favorite: false,
-    multiple: false,
-    correct: false,
-    explanation: "The Product Owner is solely responsible for managing the Product Backlog. This includes ordering items, ensuring clarity of items, and ensuring the Development Team understands items to the level needed.",
-    answers: [
-      {
-        value: 792,
-        title: "Scrum Master",
-        correct: 0
-      },
-      {
-        value: 793,
-        title: "Product Owner",
-        correct: 1
-      },
-      {
-        value: 794,
-        title: "Development Team",
-        correct: 0
-      }
-    ]
-  }
-]
-
 export default function QuizApp() {
+  const [questions, setQuestions] = useState<Question[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
   const [showFeedback, setShowFeedback] = useState(false)
@@ -124,8 +37,57 @@ export default function QuizApp() {
   const [quizCompleted, setQuizCompleted] = useState(false)
   const [userAnswers, setUserAnswers] = useState<number[]>([])
 
-  const currentQuestion = sampleQuestions[currentQuestionIndex]
-  const totalQuestions = sampleQuestions.length
+  // Load questions from JSON file
+  useEffect(() => {
+    const loadQuestions = async () => {
+      try {
+        const response = await fetch('/data/questions.json')
+        if (!response.ok) {
+          throw new Error('Failed to load questions')
+        }
+        const data = await response.json()
+        setQuestions(data)
+        setLoading(false)
+      } catch (err) {
+        setError('Failed to load quiz questions. Please try again.')
+        setLoading(false)
+      }
+    }
+
+    loadQuestions()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4 flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardContent className="flex flex-col items-center justify-center p-8">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-4" />
+            <p className="text-lg font-medium">Loading Quiz...</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4 flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardContent className="flex flex-col items-center justify-center p-8">
+            <XCircle className="w-8 h-8 text-red-600 mb-4" />
+            <p className="text-lg font-medium text-red-600 text-center">{error}</p>
+            <Button onClick={() => window.location.reload()} className="mt-4">
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  const currentQuestion = questions[currentQuestionIndex]
+  const totalQuestions = questions.length
   const progress = ((currentQuestionIndex + 1) / totalQuestions) * 100
 
   const handleAnswerSelect = (answerValue: number) => {
