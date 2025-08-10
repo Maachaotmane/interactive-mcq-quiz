@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { CheckCircle, XCircle, RotateCcw, Trophy, Loader2 } from 'lucide-react'
+import { CheckCircle, XCircle, RotateCcw, Trophy, Loader2, Clock, Play } from 'lucide-react'
 
 interface Answer {
   value: number
@@ -30,12 +30,56 @@ export default function QuizApp() {
   const [questions, setQuestions] = useState<Question[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [quizStarted, setQuizStarted] = useState(false)
+  const [selectedTimeMinutes, setSelectedTimeMinutes] = useState<number>(10)
+  const [timeRemaining, setTimeRemaining] = useState<number>(0) // in seconds
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [selectedAnswers, setSelectedAnswers] = useState<number[]>([])
   const [showFeedback, setShowFeedback] = useState(false)
   const [score, setScore] = useState(0)
   const [quizCompleted, setQuizCompleted] = useState(false)
   const [userAnswers, setUserAnswers] = useState<number[]>([])
+  const [timeExpired, setTimeExpired] = useState(false)
+  
+  const timerRef = useRef<NodeJS.Timeout | null>(null)
+
+  const formatTime = (seconds: number): string => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  const getTimeColor = (seconds: number, totalSeconds: number): string => {
+    const percentage = (seconds / totalSeconds) * 100;
+    if (percentage > 50) return "text-green-600";
+    if (percentage > 25) return "text-yellow-600";
+    return "text-red-600";
+  };
+
+  useEffect(() => {
+    if (quizStarted && !quizCompleted && !showFeedback && timeRemaining > 0) {
+      timerRef.current = setInterval(() => {
+        setTimeRemaining(prev => {
+          if (prev <= 1) {
+            setTimeExpired(true);
+            setQuizCompleted(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    }
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [quizStarted, quizCompleted, showFeedback, timeRemaining]);
 
   useEffect(() => {
     const loadQuestions = async () => {
@@ -73,6 +117,11 @@ export default function QuizApp() {
 
     loadQuestions()
   }, [])
+
+  const startQuiz = () => {
+    setQuizStarted(true);
+    setTimeRemaining(selectedTimeMinutes * 60);
+  };
 
   if (loading) {
     return (
@@ -152,9 +201,73 @@ export default function QuizApp() {
     )
   }
 
+  if (!quizStarted) {
+    const timeOptions = [5, 10, 15, 20, 30, 45, 60];
+    
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4 flex items-center justify-center">
+        <Card className="w-full max-w-2xl">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+              <Clock className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+            </div>
+            <CardTitle className="text-3xl font-bold">Quiz Setup</CardTitle>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">
+              Choose how much time you want for the entire quiz
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="text-center">
+              <p className="text-lg font-medium mb-4">
+                Total Questions: <span className="text-blue-600 dark:text-blue-400">{questions.length}</span>
+              </p>
+            </div>
+            
+            <div className="space-y-4">
+              <label className="text-lg font-medium">Select Quiz Duration:</label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {timeOptions.map((minutes) => (
+                  <button
+                    key={minutes}
+                    onClick={() => setSelectedTimeMinutes(minutes)}
+                    className={`p-4 rounded-lg border-2 transition-all duration-200 ${
+                      selectedTimeMinutes === minutes
+                        ? "border-blue-500 bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300"
+                        : "border-gray-200 hover:border-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                    }`}
+                  >
+                    <div className="text-2xl font-bold">{minutes}</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      minute{minutes !== 1 ? 's' : ''}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+              <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
+                <span>Average time per question:</span>
+                <span className="font-medium">
+                  ~{Math.round((selectedTimeMinutes * 60) / questions.length)} seconds
+                </span>
+              </div>
+            </div>
+
+            <Button onClick={startQuiz} size="lg" className="w-full">
+              <Play className="w-4 h-4 mr-2" />
+              Start Quiz ({selectedTimeMinutes} minute{selectedTimeMinutes !== 1 ? 's' : ''})
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const currentQuestion = questions[currentQuestionIndex]
   const totalQuestions = questions.length
   const progress = ((currentQuestionIndex + 1) / totalQuestions) * 100
+  const totalTimeSeconds = selectedTimeMinutes * 60
 
   const handleAnswerSelect = (answerValue: number) => {
     if (showFeedback) return
@@ -210,12 +323,15 @@ export default function QuizApp() {
   }
 
   const restartQuiz = () => {
+    setQuizStarted(false)
     setCurrentQuestionIndex(0)
     setSelectedAnswers([])
     setShowFeedback(false)
     setScore(0)
     setQuizCompleted(false)
     setUserAnswers([])
+    setTimeExpired(false)
+    setTimeRemaining(0)
   }
 
   const getAnswerStyle = (answer: Answer) => {
@@ -271,7 +387,14 @@ export default function QuizApp() {
             <div className="mx-auto mb-4 w-16 h-16 bg-yellow-100 dark:bg-yellow-900 rounded-full flex items-center justify-center">
               <Trophy className="w-8 h-8 text-yellow-600 dark:text-yellow-400" />
             </div>
-            <CardTitle className="text-3xl font-bold">Quiz Completed!</CardTitle>
+            <CardTitle className="text-3xl font-bold">
+              {timeExpired ? "Time's Up!" : "Quiz Completed!"}
+            </CardTitle>
+            {timeExpired && (
+              <p className="text-red-600 dark:text-red-400 mt-2">
+                The quiz ended because time ran out
+              </p>
+            )}
           </CardHeader>
           <CardContent className="text-center space-y-6">
             <div className="space-y-2">
@@ -281,6 +404,11 @@ export default function QuizApp() {
               <p className="text-xl text-gray-600 dark:text-gray-400">
                 You scored {score} out of {totalQuestions} questions correctly
               </p>
+              {timeExpired && (
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Questions answered: {currentQuestionIndex + (showFeedback ? 1 : 0)} of {totalQuestions}
+                </p>
+              )}
             </div>
             
             <div className="space-y-2">
@@ -290,6 +418,21 @@ export default function QuizApp() {
                   className="bg-gradient-to-r from-blue-500 to-blue-600 h-4 rounded-full transition-all duration-1000 ease-out"
                   style={{ width: `${percentage}%` }}
                 />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+                <div className="font-semibold">Time Used</div>
+                <div className="text-gray-600 dark:text-gray-400">
+                  {formatTime(totalTimeSeconds - timeRemaining)} / {formatTime(totalTimeSeconds)}
+                </div>
+              </div>
+              <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+                <div className="font-semibold">Avg. per Question</div>
+                <div className="text-gray-600 dark:text-gray-400">
+                  {Math.round((totalTimeSeconds - timeRemaining) / Math.max(currentQuestionIndex + (showFeedback ? 1 : 0), 1))}s
+                </div>
               </div>
             </div>
             
@@ -311,8 +454,18 @@ export default function QuizApp() {
             <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
               Scrum Quiz
             </h1>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              Question {currentQuestionIndex + 1} of {totalQuestions}
+            <div className="flex items-center space-x-4">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                Question {currentQuestionIndex + 1} of {totalQuestions}
+              </div>
+              <div className={`flex items-center space-x-2 px-3 py-1 rounded-lg bg-white dark:bg-gray-800 border ${
+                timeRemaining <= 60 ? 'border-red-200 dark:border-red-800' : 'border-gray-200 dark:border-gray-700'
+              }`}>
+                <Clock className={`w-4 h-4 ${getTimeColor(timeRemaining, totalTimeSeconds)}`} />
+                <span className={`font-mono font-bold ${getTimeColor(timeRemaining, totalTimeSeconds)}`}>
+                  {formatTime(timeRemaining)}
+                </span>
+              </div>
             </div>
           </div>
           <Progress value={progress} className="h-2" />
