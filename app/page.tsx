@@ -26,6 +26,41 @@ interface Question {
   answers: Answer[]
 }
 
+// Add custom slider styles
+const sliderStyles = `
+  .slider::-webkit-slider-thumb {
+    appearance: none;
+    height: 24px;
+    width: 24px;
+    border-radius: 50%;
+    background: #3b82f6;
+    cursor: pointer;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  }
+
+  .slider::-moz-range-thumb {
+    height: 24px;
+    width: 24px;
+    border-radius: 50%;
+    background: #3b82f6;
+    cursor: pointer;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  }
+
+  .slider::-webkit-slider-track {
+    height: 12px;
+    border-radius: 6px;
+  }
+
+  .slider::-moz-range-track {
+    height: 12px;
+    border-radius: 6px;
+    background: #e5e7eb;
+  }
+`;
+
 export default function QuizApp() {
   const [questions, setQuestions] = useState<Question[]>([])
   const [loading, setLoading] = useState(true)
@@ -106,7 +141,6 @@ export default function QuizApp() {
         if (data.length === 0) {
           throw new Error('No questions found in the file')
         }
-        
         setQuestions(data)
         setLoading(false)
       } catch (err) {
@@ -122,6 +156,16 @@ export default function QuizApp() {
     setQuizStarted(true);
     setTimeRemaining(selectedTimeMinutes * 60);
   };
+
+  useEffect(() => {
+    const styleSheet = document.createElement("style");
+    styleSheet.innerText = sliderStyles;
+    document.head.appendChild(styleSheet);
+    
+    return () => {
+      document.head.removeChild(styleSheet);
+    };
+  }, []);
 
   if (loading) {
     return (
@@ -202,7 +246,8 @@ export default function QuizApp() {
   }
 
   if (!quizStarted) {
-    const timeOptions = [5, 10, 15, 20, 30, 45, 60];
+    const minTime = 5;
+    const maxTime = 60;
     
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4 flex items-center justify-center">
@@ -223,34 +268,84 @@ export default function QuizApp() {
               </p>
             </div>
             
-            <div className="space-y-4">
-              <label className="text-lg font-medium">Select Quiz Duration:</label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {timeOptions.map((minutes) => (
-                  <button
-                    key={minutes}
-                    onClick={() => setSelectedTimeMinutes(minutes)}
-                    className={`p-4 rounded-lg border-2 transition-all duration-200 ${
-                      selectedTimeMinutes === minutes
-                        ? "border-blue-500 bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300"
-                        : "border-gray-200 hover:border-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
-                    }`}
-                  >
-                    <div className="text-2xl font-bold">{minutes}</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                      minute{minutes !== 1 ? 's' : ''}
+            <div className="space-y-6">
+              <div className="text-center">
+                <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">
+                  {selectedTimeMinutes} minute{selectedTimeMinutes !== 1 ? 's' : ''}
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Quiz Duration
+                </p>
+              </div>
+              
+              <div className="space-y-4">
+                <label className="text-lg font-medium block text-center">Select Quiz Duration:</label>
+                
+                <div className="px-4">
+                  <div className="relative">
+                    <input
+                      type="range"
+                      min={minTime}
+                      max={maxTime}
+                      step="5"
+                      value={selectedTimeMinutes}
+                      onChange={(e) => setSelectedTimeMinutes(parseInt(e.target.value))}
+                      className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                      style={{
+                        background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((selectedTimeMinutes - minTime) / (maxTime - minTime)) * 100}%, #e5e7eb ${((selectedTimeMinutes - minTime) / (maxTime - minTime)) * 100}%, #e5e7eb 100%)`
+                      }}
+                    />
+                    
+                    <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-2">
+                      <span>{minTime}m</span>
+                      <span>15m</span>
+                      <span>30m</span>
+                      <span>45m</span>
+                      <span>{maxTime}m</span>
                     </div>
-                  </button>
-                ))}
+                    
+                    <div className="flex justify-center space-x-2 mt-4">
+                      {[10, 15, 20, 30].map((time) => (
+                        <button
+                          key={time}
+                          onClick={() => setSelectedTimeMinutes(time)}
+                          className={`px-3 py-1 text-xs rounded-full border transition-all duration-200 ${
+                            selectedTimeMinutes === time
+                              ? "bg-blue-500 text-white border-blue-500"
+                              : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-600 hover:border-blue-300"
+                          }`}
+                        >
+                          {time}m
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
             <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-              <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
-                <span>Average time per question:</span>
-                <span className="font-medium">
-                  ~{Math.round((selectedTimeMinutes * 60) / questions.length)} seconds
-                </span>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="text-center">
+                  <div className="font-semibold text-gray-700 dark:text-gray-300">
+                    Average per Question
+                  </div>
+                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                    {Math.round((selectedTimeMinutes * 60) / questions.length)}s
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="font-semibold text-gray-700 dark:text-gray-300">
+                    Difficulty Level
+                  </div>
+                  <div className={`text-2xl font-bold ${
+                    selectedTimeMinutes >= 30 ? 'text-green-600' : 
+                    selectedTimeMinutes >= 15 ? 'text-yellow-600' : 'text-red-600'
+                  }`}>
+                    {selectedTimeMinutes >= 30 ? 'Easy' : 
+                     selectedTimeMinutes >= 15 ? 'Medium' : 'Hard'}
+                  </div>
+                </div>
               </div>
             </div>
 
