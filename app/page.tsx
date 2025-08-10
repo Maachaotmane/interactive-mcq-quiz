@@ -31,22 +31,23 @@ export default function QuizApp() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
+  const [selectedAnswers, setSelectedAnswers] = useState<number[]>([])
   const [showFeedback, setShowFeedback] = useState(false)
   const [score, setScore] = useState(0)
   const [quizCompleted, setQuizCompleted] = useState(false)
   const [userAnswers, setUserAnswers] = useState<number[]>([])
 
-  // Load questions from JSON file
   useEffect(() => {
     const loadQuestions = async () => {
       try {
         const response = await fetch('/data/questions.json')
+        
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
         
         const responseText = await response.text()
+        
         let data
         try {
           data = JSON.parse(responseText)
@@ -156,25 +157,52 @@ export default function QuizApp() {
   const progress = ((currentQuestionIndex + 1) / totalQuestions) * 100
 
   const handleAnswerSelect = (answerValue: number) => {
-    if (showFeedback) return 
+    if (showFeedback) return
     
-    setSelectedAnswer(answerValue)
+    if (currentQuestion.multiple) {
+      setSelectedAnswers(prev => {
+        if (prev.includes(answerValue)) {
+          return prev.filter(id => id !== answerValue)
+        } else {
+          return [...prev, answerValue]
+        }
+      })
+    } else {
+      setSelectedAnswers([answerValue])
+      setShowFeedback(true)
+      
+      const correctAnswer = currentQuestion.answers.find(answer => answer.correct === 1)
+      const isCorrect = answerValue === correctAnswer?.value
+      
+      if (isCorrect) {
+        setScore(score + 1)
+      }
+      
+      setUserAnswers([...userAnswers, answerValue])
+    }
+  }
+
+  const handleSubmitMultiSelect = () => {
     setShowFeedback(true)
     
-    const correctAnswer = currentQuestion.answers.find(answer => answer.correct === 1)
-    const isCorrect = answerValue === correctAnswer?.value
+    const correctAnswers = currentQuestion.answers
+      .filter(answer => answer.correct === 1)
+      .map(answer => answer.value)
+    
+    const isCorrect = correctAnswers.length === selectedAnswers.length &&
+      correctAnswers.every(answer => selectedAnswers.includes(answer))
     
     if (isCorrect) {
       setScore(score + 1)
     }
     
-    setUserAnswers([...userAnswers, answerValue])
+    setUserAnswers([...userAnswers, ...selectedAnswers])
   }
 
   const handleNextQuestion = () => {
     if (currentQuestionIndex < totalQuestions - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1)
-      setSelectedAnswer(null)
+      setSelectedAnswers([])
       setShowFeedback(false)
     } else {
       setQuizCompleted(true)
@@ -183,7 +211,7 @@ export default function QuizApp() {
 
   const restartQuiz = () => {
     setCurrentQuestionIndex(0)
-    setSelectedAnswer(null)
+    setSelectedAnswers([])
     setShowFeedback(false)
     setScore(0)
     setQuizCompleted(false)
@@ -191,18 +219,21 @@ export default function QuizApp() {
   }
 
   const getAnswerStyle = (answer: Answer) => {
+    const isSelected = selectedAnswers.includes(answer.value)
+  
     if (!showFeedback) {
-      return selectedAnswer === answer.value 
+      return isSelected 
         ? "border-blue-500 bg-blue-50 dark:bg-blue-950" 
         : "border-gray-200 hover:border-gray-300"
     }
     
     const isCorrect = answer.correct === 1
-    const isSelected = selectedAnswer === answer.value
     
-    if (isCorrect) {
+    if (isCorrect && isSelected) {
       return "border-green-500 bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300"
-    } else if (isSelected) {
+    } else if (isCorrect && !isSelected) {
+      return "border-green-500 bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400 opacity-70"
+    } else if (!isCorrect && isSelected) {
       return "border-red-500 bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300"
     }
     
@@ -210,10 +241,16 @@ export default function QuizApp() {
   }
 
   const getAnswerIcon = (answer: Answer) => {
-    if (!showFeedback) return null
+    if (!showFeedback) {
+      return selectedAnswers.includes(answer.value) ? 
+        <div className="w-5 h-5 bg-blue-500 rounded border-2 border-blue-500 flex items-center justify-center">
+          <CheckCircle className="w-3 h-3 text-white" />
+        </div> : 
+        <div className="w-5 h-5 border-2 border-gray-300 rounded"></div>
+    }
     
     const isCorrect = answer.correct === 1
-    const isSelected = selectedAnswer === answer.value
+    const isSelected = selectedAnswers.includes(answer.value)
     
     if (isCorrect) {
       return <CheckCircle className="w-5 h-5 text-green-600" />
@@ -298,6 +335,11 @@ export default function QuizApp() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-3">
+              {currentQuestion.multiple && !showFeedback && (
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                  Select all correct answers:
+                </p>
+              )}
               {currentQuestion.answers.map((answer) => (
                 <button
                   key={answer.value}
@@ -313,20 +355,58 @@ export default function QuizApp() {
               ))}
             </div>
 
+            {currentQuestion.multiple && !showFeedback && selectedAnswers.length > 0 && (
+              <div className="flex justify-center mt-4">
+                <Button onClick={handleSubmitMultiSelect} size="lg">
+                  Submit Answer{selectedAnswers.length > 1 ? 's' : ''}
+                </Button>
+              </div>
+            )}
+
             {showFeedback && (
               <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border-l-4 border-blue-500">
                 <div className="flex items-center mb-2">
-                  {selectedAnswer === currentQuestion.answers.find(a => a.correct === 1)?.value ? (
-                    <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
-                  ) : (
-                    <XCircle className="w-5 h-5 text-red-600 mr-2" />
-                  )}
-                  <span className="font-semibold">
-                    {selectedAnswer === currentQuestion.answers.find(a => a.correct === 1)?.value 
-                      ? "Correct!" 
-                      : "Incorrect"
+                  {(() => {
+                    if (currentQuestion.multiple) {
+                      const correctAnswers = currentQuestion.answers
+                        .filter(answer => answer.correct === 1)
+                        .map(answer => answer.value)
+                      const isCorrect = correctAnswers.length === selectedAnswers.length &&
+                        correctAnswers.every(answer => selectedAnswers.includes(answer))
+                      
+                      return (
+                        <>
+                          {isCorrect ? (
+                            <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
+                          ) : (
+                            <XCircle className="w-5 h-5 text-red-600 mr-2" />
+                          )}
+                          <span className="font-semibold">
+                            {isCorrect ? "Correct!" : "Incorrect"}
+                            {!isCorrect && (
+                              <span className="text-sm font-normal ml-2">
+                                ({selectedAnswers.length}/{correctAnswers.length} correct selections)
+                              </span>
+                            )}
+                          </span>
+                        </>
+                      )
+                    } else {
+                      const isCorrect = selectedAnswers[0] === currentQuestion.answers.find(a => a.correct === 1)?.value
+                      return (
+                        <>
+                          {isCorrect ? (
+                            <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
+                          ) : (
+                            <XCircle className="w-5 h-5 text-red-600 mr-2" />
+                          )}
+                          <span className="font-semibold">
+                            {isCorrect ? "Correct!" : "Incorrect"}
+                          </span>
+                        </>
+                      )
                     }
-                  </span>
+                  })()}
                 </div>
                 <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
                   {currentQuestion.explanation}
