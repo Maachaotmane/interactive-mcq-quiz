@@ -110,6 +110,7 @@ export default function QuizApp() {
     return "text-red-600";
   };
 
+  // Timer effect
   useEffect(() => {
     if (quizStarted && !quizCompleted && !showFeedback && timeRemaining > 0) {
       timerRef.current = setInterval(() => {
@@ -179,6 +180,7 @@ export default function QuizApp() {
     setTimeRemaining(selectedTimeMinutes * 60);
   };
 
+  // Add the styles to the component
   useEffect(() => {
     const styleSheet = document.createElement("style");
     styleSheet.innerText = sliderStyles;
@@ -267,9 +269,10 @@ export default function QuizApp() {
     )
   }
 
+  // Time Selection Screen
   if (!quizStarted) {
-    const minTime = 5;
-    const maxTime = 60;
+    const minTime = 1;
+    const maxTime = 240;
     
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4 flex items-center justify-center">
@@ -303,6 +306,7 @@ export default function QuizApp() {
               <div className="space-y-4">
                 <label className="text-lg font-medium block text-center">Select Quiz Duration:</label>
                 
+                {/* Range Slider */}
                 <div className="px-4">
                   <div className="relative">
                     <input
@@ -318,6 +322,7 @@ export default function QuizApp() {
                       }}
                     />
                     
+                    {/* Slider Labels */}
                     <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-2">
                       <span>{minTime}m</span>
                       <span>15m</span>
@@ -326,6 +331,7 @@ export default function QuizApp() {
                       <span>{maxTime}m</span>
                     </div>
                     
+                    {/* Quick Select Buttons */}
                     <div className="flex justify-center space-x-2 mt-4">
                       {[10, 15, 20, 30].map((time) => (
                         <button
@@ -361,11 +367,15 @@ export default function QuizApp() {
                     Difficulty Level
                   </div>
                   <div className={`text-2xl font-bold ${
-                    selectedTimeMinutes >= 30 ? 'text-green-600' : 
-                    selectedTimeMinutes >= 15 ? 'text-yellow-600' : 'text-red-600'
+                    (selectedTimeMinutes * 60) / questions.length >= 60 ? 'text-green-600' : 
+                    (selectedTimeMinutes * 60) / questions.length >= 45 ? 'text-yellow-600' : 'text-red-600'
                   }`}>
-                    {selectedTimeMinutes >= 30 ? 'Easy' : 
-                     selectedTimeMinutes >= 15 ? 'Medium' : 'Hard'}
+                    {(selectedTimeMinutes * 60) / questions.length >= 60 ? 'Easy' : 
+                     (selectedTimeMinutes * 60) / questions.length >= 45 ? 'Medium' : 'Hard'}
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    {(selectedTimeMinutes * 60) / questions.length >= 60 ? '1+ min per question' : 
+                     (selectedTimeMinutes * 60) / questions.length >= 45 ? '45-59s per question' : 'Under 45s per question'}
                   </div>
                 </div>
               </div>
@@ -566,6 +576,7 @@ export default function QuizApp() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
       <div className="max-w-4xl mx-auto">
+        {/* Header with Timer */}
         <div className="mb-8">
           <div className="flex justify-between items-center mb-4">
             <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
@@ -588,6 +599,7 @@ export default function QuizApp() {
           <Progress value={progress} className="h-2" />
         </div>
 
+        {/* Question Card */}
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="text-xl leading-relaxed">
@@ -604,6 +616,7 @@ export default function QuizApp() {
             )}
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Answer Options */}
             <div className="space-y-3">
               {currentQuestion.multiple && !showFeedback && (
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
@@ -625,6 +638,7 @@ export default function QuizApp() {
               ))}
             </div>
 
+            {/* Submit button for multi-select questions */}
             {currentQuestion.multiple && !showFeedback && selectedAnswers.length > 0 && (
               <div className="flex justify-center mt-4">
                 <Button onClick={handleSubmitMultiSelect} size="lg">
@@ -633,6 +647,7 @@ export default function QuizApp() {
               </div>
             )}
 
+            {/* Feedback Section */}
             {showFeedback && (
               <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border-l-4 border-blue-500">
                 <div className="flex items-center mb-2">
@@ -684,6 +699,7 @@ export default function QuizApp() {
               </div>
             )}
 
+            {/* Next Button */}
             {showFeedback && (
               <div className="flex justify-end mt-6">
                 <Button onClick={handleNextQuestion} size="lg">
@@ -694,6 +710,7 @@ export default function QuizApp() {
           </CardContent>
         </Card>
 
+        {/* Score Display */}
         <div className="text-center text-gray-600 dark:text-gray-400">
           Current Score: {score}/{currentQuestionIndex + (showFeedback ? 1 : 0)}
         </div>
