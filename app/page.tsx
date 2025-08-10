@@ -78,6 +78,25 @@ export default function QuizApp() {
   
   const timerRef = useRef<NodeJS.Timeout | null>(null)
 
+  const removeDuplicateQuestions = (questions: Question[]): Question[] => {
+    const seen = new Set<string>();
+    return questions.filter((q) => {
+      const normalized = q.question.trim().toLowerCase();
+      if (seen.has(normalized)) return false;
+      seen.add(normalized);
+      return true;
+    });
+  };
+
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
   const formatTime = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
@@ -141,6 +160,9 @@ export default function QuizApp() {
         if (data.length === 0) {
           throw new Error('No questions found in the file')
         }
+        
+        data = removeDuplicateQuestions(data);
+        data = shuffleArray(data);
         setQuestions(data)
         setLoading(false)
       } catch (err) {
