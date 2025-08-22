@@ -330,7 +330,7 @@ export default function QuizApp() {
 
   if (!quizStarted) {
     const minQuestions = 1
-    const maxQuestions = Math.min(50, allQuestions.length)
+    const maxQuestions = Math.min(80, allQuestions.length)
     const timeConstraints = getTimeConstraints(selectedQuestionCount)
 
     return (
